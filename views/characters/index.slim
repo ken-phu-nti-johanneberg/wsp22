@@ -1,0 +1,10 @@
+/ Kanske skapar en profil map istället för karaktär där man kan se alla en karaktär lista när man loggar in.
+/ nav i profile när inloggad visar alla options för karatärer(edit, new, delete o.s.v)
+/ Ska kunna lägga till en bild på karaktären
+/ En lista över alla dina karaktärer
+nav 
+    a href="/characters/new" Create a character 
+h1 Characters
+
+- character_list.each do |character|
+    p = character_list["Name"]
