@@ -50,11 +50,13 @@ post('/login') do
     # Hämta lösenord och id för username
     db = SQLite3::Database.new("db/ryuutama.db")
     # Vad gör .first???
-    db.execute("SELECT * FROM users where Username =?". username).first
+    # Vad gör db.result_as_hash = true
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM users WHERE Username =?", username).first
     # Vad ska stå innanför result
-    password_digest = result["password"]
+    password_digest = result["Password"]
     id = result["UserID"]
-    if BCRYPT::Password.new(password_digest) == password
+    if BCrypt::Password.new(password_digest) == password
         session[:id] = id 
         redirect('/profile')
     else
@@ -64,7 +66,7 @@ end
 
 # Character_list
 get('/characters/index') do
-    slim(:"characters/index")
+    slim(:"/characters/index")
 end
 
 # New character
