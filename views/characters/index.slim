@@ -5,6 +5,9 @@
 nav 
     a href="/characters/new" Create a character 
 h1 Characters
+h1 Inloggad som #{result}
 
-/ - character_list.each do |character|
-/     p = character_list["Name"]
+/ ol
+/     - characters.each do |character|
+/     li 
+/         a href="character" 

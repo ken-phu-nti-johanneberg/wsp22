@@ -15,7 +15,11 @@ end
 # Profil
 get('/profile') do 
 # Ska visa olika beroende på om användaren är inloggad eller inte
-    slim(:profile)
+    id = session[:id].to_i
+    db = SQLite3::Database.new('db/ryuutama.db')
+    db.results_as_hash = true
+    result = db.execute("SELECT username FROM users WHERE user_id = ?", id)
+    slim(:profile, locals:{})
 end
 
 # Registering sida
@@ -31,7 +35,7 @@ post('/user') do
     if (password == password_confirm)
         password_digest = BCrypt::Password.create(password)
         db = SQLite3::Database.new("db/ryuutama.db")
-        db.execute("INSERT INTO users (Username, Password) VALUES (?,?)", username, password_digest)
+        db.execute("INSERT INTO users (username, password) VALUES (?,?)", username, password_digest)
         redirect('/showlogin')
     else
         "Password does not match"
@@ -52,10 +56,10 @@ post('/login') do
     # Vad gör .first???
     # Vad gör db.result_as_hash = true
     db.results_as_hash = true
-    result = db.execute("SELECT * FROM users WHERE Username =?", username).first
+    result = db.execute("SELECT * FROM users WHERE username = ?", username).first
     # Vad ska stå innanför result
-    password_digest = result["Password"]
-    id = result["UserID"]
+    password_digest = result["password"]
+    id = result["user_id"]
     if BCrypt::Password.new(password_digest) == password
         session[:id] = id 
         redirect('/profile')
@@ -65,8 +69,12 @@ post('/login') do
 end
 
 # Character_list
-get('/characters/index') do
-    slim(:"/characters/index")
+get('/characters') do
+    id = session[:id].to_i
+    db = SQLite3::Database.new('db/ryuutama.db')
+    db.results_as_hash = true
+    result = db.execute("SELECT username FROM users WHERE user_id = ?", id)
+    slim(:"characters/index", locals:{result:result})
 end
 
 # New character
@@ -74,16 +82,19 @@ get('/characters/new') do
     slim(:"characters/new")
 end
 
-post('/characters/new') do
+post('/characters') do
 # Ta in data från formulär från slim
 # Lägg till i data bas
 # INSERT användaren id också
+    id = session[:id].to_i
     name = params[:char_name]
     db = SQLite3::Database.new("db/ryuutama.db")
-    db.execute("INSERT INTO character_list (Name) VALUES (?)", name)
-    redirect('/characters')
+    db.execute("INSERT INTO character_list (name, user_id) VALUES (?)", name, id)
+    redirect('/characters/new')
 end
+
 # Edit character
+# get...
 # Ta in data från formulär från slim
 # Lägg till i data bas
 
