@@ -14,13 +14,16 @@ end
 
 # Profil
 get('/profile') do 
-# Ska visa olika beroende på om användaren är inloggad eller inte
+# Ska visa olika beroende på om användaren är inloggad eller inte¨
     id = session[:id].to_i
     db = SQLite3::Database.new('db/ryuutama.db')
     db.results_as_hash = true
     result = db.execute("SELECT username FROM users WHERE user_id = ?", id)
-    slim(:profile, locals:{})
+    slim(:profile, locals:{result:result})
 end
+
+
+
 
 # Registering sida
 get('/register') do
@@ -61,7 +64,7 @@ post('/login') do
     password_digest = result["password"]
     id = result["user_id"]
     if BCrypt::Password.new(password_digest) == password
-        session[:id] = id 
+        session[:id] = id
         redirect('/profile')
     else
         'Wrong password'
@@ -73,7 +76,7 @@ get('/characters') do
     id = session[:id].to_i
     db = SQLite3::Database.new('db/ryuutama.db')
     db.results_as_hash = true
-    result = db.execute("SELECT username FROM users WHERE user_id = ?", id)
+    result = db.execute("SELECT * FROM character_list WHERE user_id = ?", id)
     slim(:"characters/index", locals:{result:result})
 end
 
@@ -89,8 +92,8 @@ post('/characters') do
     id = session[:id].to_i
     name = params[:char_name]
     db = SQLite3::Database.new("db/ryuutama.db")
-    db.execute("INSERT INTO character_list (name, user_id) VALUES (?)", name, id)
-    redirect('/characters/new')
+    db.execute("INSERT INTO character_list (name, user_id) VALUES (?,?)", name, id)
+    redirect('/characters')
 end
 
 # Edit character
