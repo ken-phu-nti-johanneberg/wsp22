@@ -82,6 +82,8 @@ end
 
 # New character
 get('/characters/new') do
+    # Hämta information från databasen
+    # Använd sedan informationen för att skapa en array och loopa arrayen för varje option
     slim(:"characters/new")
 end
 
@@ -91,8 +93,12 @@ post('/characters') do
 # INSERT användaren id också
     id = session[:id].to_i
     name = params[:char_name]
+    class_id = params[:class_id]
+    type_id = params[:type_id]
+    as_id = params[:ability_score_id]
+    mw_id = params[:mastered_weapon_id]
     db = SQLite3::Database.new("db/ryuutama.db")
-    db.execute("INSERT INTO character_list (name, user_id) VALUES (?,?)", name, id)
+    db.execute("INSERT INTO characters (name, user_id, class_id, type_id, ability_score_id, mastered_weapon_id) VALUES (?,?,?,?,?,?)", name, id, class_id, type_id, as_id, mw_id)
     redirect('/characters')
 end
 

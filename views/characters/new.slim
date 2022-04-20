@@ -5,7 +5,26 @@ h1 create a new character
 
 / namn
 form action="/characters" method="POST" 
+    / Name
     input type="text" name="char_name" placeholder="Name"
+    / Class
+    select name="class_id"
+        option value="1" Artisan
+        option value="2" Farmer
+    select name="type_id"
+        option value="1" Attack type
+        option value="2" Technical type 
+        option value="3" Magical type 
+    select name="ability_score_id"
+        option value="1" Average set 
+        option value="2" Standard set 
+        option value="3" Specialized set
+    select name="mastered_weapon_id"
+        option value="1" Light Blade 
+        option value="2" Blade 
+        option value="3" Polearm 
+        option value="4" Axe 
+        option value="5" Bow
     input type="submit" value="create character"
 
 / Stats:
