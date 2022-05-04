@@ -5,9 +5,14 @@ h1 create a new character
 
 / namn
 form action="/characters" method="POST" 
-    / Name
+    / Character
     input type="text" name="char_name" placeholder="Name"
-    / Class
+    input type="text" name="gender" placeholder="Gender"
+    input type="text" name="appearance" placeholder="Appearance"
+    input type="text" name="hometown" placeholder="Hometown"
+    input type="text" name="personal_item" placeholder="Personal item"
+    input type="text" name="details" placeholder="Other details"
+    / Stats and role
     select name="class_id"
         option value="1" Artisan
         option value="2" Farmer

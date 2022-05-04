@@ -1,3 +1,9 @@
+# MVC (MODEL, VIEW, CONTROLLER) - dela upp app.rb i hjälpfunktioner som hanterar databas kommunikation
+# Yardoc - dokumentation
+# Inner join - classname, ability_score, mastered_weapon_id, 
+# Säkerhet - login cooldown
+# Validering, before-block och andra saker
+
 require 'sinatra'
 require 'slim'
 require 'sqlite3'
@@ -16,16 +22,16 @@ end
 get('/profile') do 
 # Ska visa olika beroende på om användaren är inloggad eller inte¨
     id = session[:id].to_i
-    db = SQLite3::Database.new('db/ryuutama.db')
+    db = SQLite3::Database.new("db/ryuutama.db")
     db.results_as_hash = true
-    result = db.execute("SELECT username FROM users WHERE user_id = ?", id)
+    result = db.execute("SELECT username FROM users WHERE user_id = ?", id).first
+    p result
     slim(:profile, locals:{result:result})
 end
 
 
-
-
 # Registering sida
+# Undersök varför det redan finns karaktärer för nya konton.
 get('/register') do
     slim(:register)
 end
@@ -74,10 +80,11 @@ end
 # Character_list
 get('/characters') do
     id = session[:id].to_i
-    db = SQLite3::Database.new('db/ryuutama.db')
+    db = SQLite3::Database.new("db/ryuutama.db")
     db.results_as_hash = true
-    result = db.execute("SELECT * FROM character_list WHERE user_id = ?", id)
-    slim(:"characters/index", locals:{result:result})
+    result = db.execute("SELECT * FROM characters WHERE user_id = ?", id)
+    p result
+    slim(:"characters/index", locals:{characters:result})
 end
 
 # New character
@@ -93,19 +100,69 @@ post('/characters') do
 # INSERT användaren id också
     id = session[:id].to_i
     name = params[:char_name]
+    gender = params[:gender]
+    appearance = params[:appearance]
+    hometown = params[:hometown]
+    personal_item = params[:personal_item]
+    details = params[:details]
     class_id = params[:class_id]
     type_id = params[:type_id]
     as_id = params[:ability_score_id]
     mw_id = params[:mastered_weapon_id]
     db = SQLite3::Database.new("db/ryuutama.db")
-    db.execute("INSERT INTO characters (name, user_id, class_id, type_id, ability_score_id, mastered_weapon_id) VALUES (?,?,?,?,?,?)", name, id, class_id, type_id, as_id, mw_id)
+    db.execute("INSERT INTO characters (name, gender, appearance, hometown, personal_item, details, user_id, class_id, type_id, ability_score_id, mastered_weapon_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)", name, gender, appearance, hometown, personal_item, details, id, class_id, type_id, as_id, mw_id)
     redirect('/characters')
 end
 
-# Edit character
-# get...
-# Ta in data från formulär från slim
-# Lägg till i data bas
-
 # Visa karaktär
-# Typ visa edit sidan utan att kunna ändra på saker
+get('/characters/:char_id') do
+    char_id = params[:char_id].to_i
+    db = SQLite3::Database.new("db/ryuutama.db")
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM characters WHERE char_id = ?", char_id).first
+    classname = db.execute("SELECT class.name FROM class INNER JOIN characters on class.class_id = characters.class_id WHERE char_id = ?",char_id).first
+    typename = db.execute("SELECT type.name FROM type INNER JOIN characters on type.type_id = characters.type_id WHERE char_id = ?", char_id).first
+    ability_score = db.execute("SELECT ability_score.name FROM ability_score INNER JOIN characters on ability_score.id = characters.ability_score_id WHERE char_id = ?", char_id).first
+    p result
+    slim(:"characters/show",locals:{character:result,classname:classname,typename:typename,ability_score:ability_score})
+end
+
+# Edit character
+get('/characters/:char_id/edit') do
+    char_id = params[:char_id].to_i
+    db = SQLite3::Database.new("db/ryuutama.db")
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM characters WHERE char_id = ?", char_id).first
+    classname = db.execute("SELECT class.name FROM class INNER JOIN characters on class.class_id = characters.class_id WHERE char_id = ?",char_id).first
+    typename = db.execute("SELECT type.name FROM type INNER JOIN characters on type.type_id = characters.type_id WHERE char_id = ?", char_id).first
+    ability_score = db.execute("SELECT ability_score.name FROM ability_score INNER JOIN characters on ability_score.id = characters.ability_score_id WHERE char_id = ?", char_id).first
+    p result
+    p "#{ability_score}"
+    slim(:"characters/edit",locals:{character:result,classname:classname,typename:typename,ability_score:ability_score})
+end
+
+post('/characters/:char_id/update') do
+    char_id = params[:char_id].to_i
+    user_id = params[:user_id].to_i
+    name = params[:char_name]
+    gender = params[:gender]
+    appearance = params[:appearance]
+    hometown = params[:hometown]
+    personal_item = params[:personal_item]
+    details = params[:details]
+    class_id = params[:class_id].to_i
+    type_id = params[:type_id].to_i
+    as_id = params[:ability_score_id].to_i
+    mw_id = params[:mastered_weapon_id].to_i
+    db = SQLite3::Database.new("db/ryuutama.db")
+    db.execute("UPDATE characters SET name=?,gender=?,appearance=?,hometown=?,personal_item=?,details=?,class_id=?,type_id=?,ability_score_id=?,mastered_weapon_id=?,user_id=? WHERE char_id = ?",name,gender,appearance,hometown,personal_item,details,class_id,type_id,as_id,mw_id,user_id,char_id)
+    redirect('/characters')
+end
+
+# Delete character
+post('/characters/:char_id/delete') do
+    char_id = params[:char_id].to_i
+    db = SQLite3::Database.new("db/ryuutama.db")
+    db.execute("DELETE FROM characters WHERE char_id = ?", char_id)
+    redirect('/characters')
+end

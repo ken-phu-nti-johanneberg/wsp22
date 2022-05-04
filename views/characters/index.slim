@@ -5,3 +5,8 @@
 nav 
     a href="/characters/new" Create a character
 h1 Characters
+
+ul
+- characters.each do |character|
+    li
+        a href="/characters/#{character["char_id"]}" #{character["name"]}
