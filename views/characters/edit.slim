@@ -16,6 +16,11 @@ form action="/characters/#{character["char_id"]}/update" method="POST"
         option value="#{character["class_id"]}" #{classname["name"]}
         option value="1" Artisan
         option value="2" Farmer
+        option value="3" Healer
+        option value="4" Hunter
+        option value="5" Merchant
+        optino value="6" Minstrel
+        option value="7" Noble
     select name="type_id"
         option value="#{character["type_id"]}" #{typename["name"]}
         option value="1" Attack type
@@ -27,7 +32,7 @@ form action="/characters/#{character["char_id"]}/update" method="POST"
         option value="2" Standard set 
         option value="3" Specialized set
     select name="mastered_weapon_id"
-        option value="#{character["mastered_weapon_id"]}" #{character["mastered_weapon_id"]}
+        option value="#{character["mastered_weapon_id"]}" #{mastered_weapon["name"]}
         option value="1" Light Blade 
         option value="2" Blade 
         option value="3" Polearm 
