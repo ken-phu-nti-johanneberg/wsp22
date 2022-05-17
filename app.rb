@@ -1,12 +1,10 @@
 # MVC (MODEL, VIEW, CONTROLLER) - dela upp app.rb i hjälpfunktioner som hanterar databas kommunikation
 # Yardoc - dokumentation
-# Inner join - classname, ability_score, mastered_weapon_id, - borde vara klar
 # Säkerhet - login cooldown
-# Validering, before-block och andra saker - ska inte kunna skapa karaktärer om man inte är inloggad helst inte kunna nå karaktär sidan om man inte är inloggad.
 # Ändra på redirect() till '/error' vid varje validering
-# CRUD - Lägg till val och magic när man skapar karaktärer, 
 # Felhantering - skriv till felmeddelanden vid fel lösen till exempel
-# Logut sida och ta bort register/login när man är inloggad
+# Logut sida och ta bort register/login när man är inloggad, hur resettar man sessions (reset_session eller session.clear/session.delete(key))
+# Skapa en bättre tabellmap
 require 'sinatra'
 require 'slim'
 require 'sqlite3'
@@ -14,8 +12,6 @@ require 'bcrypt'
 require_relative './model.rb'
 
 enable :sessions
-# Skapa sessions med id, användaren inloggad
-# Stora eller små bokstäver i databasen???
 
 # Start
 get('/') do
@@ -26,8 +22,7 @@ end
 get('/profile') do 
 # Ska visa olika beroende på om användaren är inloggad eller inte¨
     id = session[:id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
-    db.results_as_hash = true
+    db = connect_to_db('db/ryuutama.db')
     result = db.execute("SELECT username FROM users WHERE user_id = ?", id).first
     p result
     slim(:profile, locals:{result:result})
@@ -45,14 +40,15 @@ post('/user') do
     username = params[:username]
     password = params[:password]
     password_confirm = params[:password_confirm]
-    if (password == password_confirm)
-        password_digest = BCrypt::Password.create(password)
-        db = SQLite3::Database.new("db/ryuutama.db")
-        db.execute("INSERT INTO users (username, password) VALUES (?,?)", username, password_digest)
-        redirect('/showlogin')
-    else
-        "Password does not match"
-    end
+    register(username,password,password_confirm)
+    # if (password == password_confirm)
+    #     password_digest = BCrypt::Password.create(password)
+    #     db = connect_to_db('db/ryuutama.db')
+    #     db.execute("INSERT INTO users (username, password) VALUES (?,?)", username, password_digest)
+    #     redirect('/showlogin')
+    # else
+    #     "Password does not match"
+    # end
 end
 
 # Login sida, (kan göra så att man två routes med '/login' men en med get och en med post)
@@ -64,22 +60,22 @@ end
 post('/login') do
     username = params[:username]
     password = params[:password]
-    # Hämta lösenord och id för username
-    db = SQLite3::Database.new("db/ryuutama.db")
-    # Vad gör .first???
-    # Vad gör db.result_as_hash = true
-    db.results_as_hash = true
-    result = db.execute("SELECT * FROM users WHERE username = ?", username).first
-    # Vad ska stå innanför result
-    password_digest = result["password"]
-    id = result["user_id"]
-    if BCrypt::Password.new(password_digest) == password
-        session[:id] = id
-        redirect('/profile')
-    else
-        'Wrong password'
-    end
+    # Lägg till result i input på def login(username, password, result)??? Fixar get data ???
+    login(username, password)
+    # result = db.execute("SELECT * FROM users WHERE username = ?", username).first
+    # password_digest = result["password"]
+    # id = result["user_id"]
+    # if BCrypt::Password.new(password_digest) == password
+    #     session[:id] = id
+    #     redirect('/profile')
+    # else
+    #     'Wrong password'
+    # end
 end
+
+# post('/logout') do
+# ...
+# end
 
 # Character_list
 before('/characters') do
@@ -90,8 +86,7 @@ end
 
 get('/characters') do
     id = session[:id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
-    db.results_as_hash = true
+    db = connect_to_db('db/ryuutama.db')
     result = db.execute("SELECT * FROM characters WHERE user_id = ?", id)
     p result
     slim(:"characters/index", locals:{characters:result})
@@ -119,7 +114,7 @@ post('/characters') do
     type_id = params[:type_id]
     as_id = params[:ability_score_id]
     mw_id = params[:mastered_weapon_id]
-    db = SQLite3::Database.new("db/ryuutama.db")
+    db = connect_to_db('db/ryuutama.db')
     db.execute("INSERT INTO characters (name, gender, appearance, hometown, personal_item, details, user_id, class_id, type_id, ability_score_id, mastered_weapon_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)", name, gender, appearance, hometown, personal_item, details, id, class_id, type_id, as_id, mw_id)
     redirect('/characters')
 end
@@ -127,8 +122,7 @@ end
 # Visa karaktär
 get('/characters/:char_id') do
     char_id = params[:char_id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
-    db.results_as_hash = true
+    db = connect_to_db('db/ryuutama.db')
     owner = db.execute("SELECT user_id FROM characters WHERE char_id = ?", char_id).first["user_id"]
     if owner == session[:id].to_i
         result = db.execute("SELECT * FROM characters WHERE char_id = ?", char_id).first
@@ -146,8 +140,7 @@ end
 # Edit character
 get('/characters/:char_id/edit') do
     char_id = params[:char_id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
-    db.results_as_hash = true
+    db = connect_to_db('db/ryuutama.db')
     owner = db.execute("SELECT user_id FROM characters WHERE char_id = ?", char_id).first["user_id"]
     if owner == session[:id]
         result = db.execute("SELECT * FROM characters WHERE char_id = ?", char_id).first
@@ -176,7 +169,7 @@ post('/characters/:char_id/update') do
     type_id = params[:type_id].to_i
     as_id = params[:ability_score_id].to_i
     mw_id = params[:mastered_weapon_id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
+    db = connect_to_db('db/ryuutama.db')
     db.execute("UPDATE characters SET name=?,gender=?,appearance=?,hometown=?,personal_item=?,details=?,class_id=?,type_id=?,ability_score_id=?,mastered_weapon_id=?,user_id=? WHERE char_id = ?",name,gender,appearance,hometown,personal_item,details,class_id,type_id,as_id,mw_id,user_id,char_id)
     redirect('/characters')
 end
@@ -184,7 +177,7 @@ end
 # Delete character
 post('/characters/:char_id/delete') do
     char_id = params[:char_id].to_i
-    db = SQLite3::Database.new("db/ryuutama.db")
+    db = connect_to_db('db/ryuutama.db')
     db.execute("DELETE FROM characters WHERE char_id = ?", char_id)
     redirect('/characters')
 end
