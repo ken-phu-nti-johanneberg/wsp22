@@ -1,9 +1,9 @@
 # MVC (MODEL, VIEW, CONTROLLER) - dela upp app.rb i hjälpfunktioner som hanterar databas kommunikation
-# Yardoc - dokumentation
-# Säkerhet - login cooldown
+# Yardoc - dokumentation 2. 
+# Säkerhet - login cooldown 3. 
 # Ändra på redirect() till '/error' vid varje validering
-# Felhantering - skriv till felmeddelanden vid fel lösen till exempel
-# Logut sida och ta bort register/login när man är inloggad, hur resettar man sessions (reset_session eller session.clear/session.delete(key))
+# Felhantering - skriv till felmeddelanden vid fel lösen till exempel 4.
+# Logut sida och ta bort register/login när man är inloggad, hur resettar man sessions (reset_session eller session.clear/session.delete(key)) 1.
 # Skapa en bättre tabellmap
 require 'sinatra'
 require 'slim'
@@ -12,6 +12,11 @@ require 'bcrypt'
 require_relative './model.rb'
 
 enable :sessions
+
+# error
+get('/error') do
+    slim(:error)
+end
 
 # Start
 get('/') do
@@ -40,7 +45,13 @@ post('/user') do
     username = params[:username]
     password = params[:password]
     password_confirm = params[:password_confirm]
-    register(username,password,password_confirm)
+    db = connect_to_db('db/ryuutama.db')
+    result = db.execute("SELECT username FROM users WHERE username = ?", username).first
+    if username.empty? || result["username"] == username
+        redirect('/error')
+    else
+        register(username,password,password_confirm)
+    end
     # if (password == password_confirm)
     #     password_digest = BCrypt::Password.create(password)
     #     db = connect_to_db('db/ryuutama.db')
@@ -118,6 +129,8 @@ post('/characters') do
     db.execute("INSERT INTO characters (name, gender, appearance, hometown, personal_item, details, user_id, class_id, type_id, ability_score_id, mastered_weapon_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)", name, gender, appearance, hometown, personal_item, details, id, class_id, type_id, as_id, mw_id)
     redirect('/characters')
 end
+
+# Before block här???
 
 # Visa karaktär
 get('/characters/:char_id') do
