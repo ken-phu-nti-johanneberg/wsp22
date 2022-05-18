@@ -18,18 +18,19 @@ def register(username,password,password_confirm)
 end
 
 # Login
-def login(username, password)
-    db = connect_to_db('db/ryuutama.db')
-    result = db.execute("SELECT * FROM users WHERE username = ?", username).first
+def login(username, password, result)
+    # db = connect_to_db('db/ryuutama.db')
+    # result = db.execute("SELECT * FROM users WHERE username = ?", username).first
     password_digest = result["password"]
-    id = result["user_id"]
     if BCrypt::Password.new(password_digest) == password
-        session[:id] = id
-        redirect('/profile')
-    else
-        'Wrong password'
+        return true
     end
+#         redirect('/profile')
+#     else
+#         "Wrong password <a href='/showlogin'>Försök igen</a>"
+#     end
 end
+
 # Funktioner
 # login
 # register

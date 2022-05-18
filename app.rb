@@ -1,7 +1,6 @@
 # MVC (MODEL, VIEW, CONTROLLER) - dela upp app.rb i hjälpfunktioner som hanterar databas kommunikation
 # Yardoc - dokumentation 2. 
 # Säkerhet - login cooldown 3. 
-# Ändra på redirect() till '/error' vid varje validering
 # Felhantering - skriv till felmeddelanden vid fel lösen till exempel 4.
 # Logut sida och ta bort register/login när man är inloggad, hur resettar man sessions (reset_session eller session.clear/session.delete(key)) 1.
 # Skapa en bättre tabellmap
@@ -9,14 +8,10 @@ require 'sinatra'
 require 'slim'
 require 'sqlite3'
 require 'bcrypt'
+require 'time'
 require_relative './model.rb'
 
 enable :sessions
-
-# error
-get('/error') do
-    slim(:error)
-end
 
 # Start
 get('/') do
@@ -24,8 +19,13 @@ get('/') do
 end
 
 # Profil
+before('/profile') do
+    if session[:id] == nil
+        redirect to ('/showlogin')
+    end
+end
+
 get('/profile') do 
-# Ska visa olika beroende på om användaren är inloggad eller inte¨
     id = session[:id].to_i
     db = connect_to_db('db/ryuutama.db')
     result = db.execute("SELECT username FROM users WHERE user_id = ?", id).first
@@ -35,12 +35,10 @@ end
 
 
 # Registering sida
-# Undersök varför det redan finns karaktärer för nya konton.
 get('/register') do
     slim(:register)
 end
 
-# Skapa konto, skapas id automatisk?
 post('/user') do 
     username = params[:username]
     password = params[:password]
@@ -48,7 +46,7 @@ post('/user') do
     db = connect_to_db('db/ryuutama.db')
     result = db.execute("SELECT username FROM users WHERE username = ?", username).first
     if username.empty? || result["username"] == username
-        redirect('/error')
+        return "Namnet är upptaget <a href='/register'>Försök igen</a>"
     else
         register(username,password,password_confirm)
     end
@@ -62,31 +60,30 @@ post('/user') do
     # end
 end
 
-# Login sida, (kan göra så att man två routes med '/login' men en med get och en med post)
+# Logga in
 get('/showlogin') do
     slim(:login)
 end
 
-# Logga in
 post('/login') do
     username = params[:username]
     password = params[:password]
     # Lägg till result i input på def login(username, password, result)??? Fixar get data ???
-    login(username, password)
-    # result = db.execute("SELECT * FROM users WHERE username = ?", username).first
-    # password_digest = result["password"]
-    # id = result["user_id"]
-    # if BCrypt::Password.new(password_digest) == password
-    #     session[:id] = id
-    #     redirect('/profile')
-    # else
-    #     'Wrong password'
-    # end
+    db = connect_to_db('db/ryuutama.db')
+    result = db.execute("SELECT * FROM users WHERE username = ?", username).first
+    logged_in = login(username, password,result)
+    if logged_in == true
+        session[:id] = result["user_id"]
+        redirect('/profile')
+    else
+        "Wrong password <a href='/showlogin'>Försök igen</a>"
+    end
 end
 
-# post('/logout') do
-# ...
-# end
+post('/logout') do
+    session.clear()
+    redirect('/showlogin')
+end
 
 # Character_list
 before('/characters') do
@@ -106,7 +103,6 @@ end
 # New character
 get('/characters/new') do
     # Hämta information från databasen
-    # Använd sedan informationen för att skapa en array och loopa arrayen för varje option
     slim(:"characters/new")
 end
 
@@ -130,8 +126,11 @@ post('/characters') do
     redirect('/characters')
 end
 
-# Before block här???
-
+before('/characters/:char_id') do
+    if session[:id] == nil
+        redirect to ('/register')
+    end
+end
 # Visa karaktär
 get('/characters/:char_id') do
     char_id = params[:char_id].to_i

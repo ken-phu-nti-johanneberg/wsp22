@@ -1,9 +1,11 @@
 nav 
-    a href="/register" register 
-    a href="/showlogin" login 
     a href="/characters" characters
 
-h1 Inloggad som #{result}
+h1 Inloggad som #{result["username"]}
+form action="/logout" method="POST"
+    input type="submit" value="Logga ut"
+    
+
 
 / Hur ändrar man på sidan utseende om man är inlogggad
 / Flytta register/login till layout
